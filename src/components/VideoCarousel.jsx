@@ -2,15 +2,38 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/all";
 gsap.registerPlugin(ScrollTrigger);
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { hightlightsSlides } from "../constants";
 import { pauseImg, playImg, replayImg } from "../utils";
 
 const VideoCarousel = () => {
-    const videoRef = useRef([]);
-    const videoSpanRef = useRef([]);
-    const videoDivRef = useRef([]);
+    // ref to keep track
+    const videoRef = useRef([]); // track video playing
+    const videoSpanRef = useRef([]); // track the no of dots for video
+    const videoDivRef = useRef([]); // track progress animation in each dot
+
+    // function to handle end of the video in the carousel
+    const handleVideoEnd = (index) => {
+        if (index !== 3) {
+        handleProcess("video-end", index);
+        } else {
+        handleProcess("video-last");
+        }
+    };
+
+    // Define the ref callbacks
+    const setVideoRef = useCallback((el, i) => {
+        videoRef.current[i] = el;
+    }, []);
+
+    const setVideoDivRef = useCallback((el, i) => {
+        videoDivRef.current[i] = el;
+    }, []);
+
+    const setVideoSpanRef = useCallback((el, i) => {
+        videoSpanRef.current[i] = el;
+    }, []);
 
     // video and indicator
     const [video, setVideo] = useState({
@@ -141,11 +164,13 @@ const VideoCarousel = () => {
             break;
 
         case "pause":
-            setVideo((pre) => ({ ...pre, isPlaying: !pre.isPlaying }));
+            videoRef.current[videoId].pause();
+            setVideo((pre) => ({ ...pre, isPlaying: false }));
             break;
 
         case "play":
-            setVideo((pre) => ({ ...pre, isPlaying: !pre.isPlaying }));
+            videoRef.current[videoId].play();
+            setVideo((pre) => ({ ...pre, isPlaying: true }));
             break;
 
         default:
@@ -153,7 +178,9 @@ const VideoCarousel = () => {
         }
     };
 
-    const handleLoadedMetaData = (i, e) => setLoadedData((pre) => [...pre, e]);
+    const handleLoadedMetaData = useCallback((i, e) => {
+        setLoadedData((pre) => [...pre, e]);
+      }, []);
 
     return (
         <>
@@ -170,15 +197,11 @@ const VideoCarousel = () => {
                     } pointer-events-none`}
                     preload="auto"
                     muted
-                    ref={(el) => (videoRef.current[i] = el)}
-                    onEnded={() =>
-                        i !== 3
-                        ? handleProcess("video-end", i)
-                        : handleProcess("video-last")
-                    }
-                    onPlay={() =>
-                        setVideo((pre) => ({ ...pre, isPlaying: true }))
-                    }
+                    ref={(el) => setVideoRef(el, i)}
+                    onEnded={() => handleVideoEnd(i)}
+                    onPlay={() => {
+                        setVideo((pre) => ({ ...pre, isPlaying: true }));
+                    }}
                     onLoadedMetadata={(e) => handleLoadedMetaData(i, e)}
                     >
                     <source src={list.video} type="video/mp4" />
@@ -203,11 +226,11 @@ const VideoCarousel = () => {
                 <span
                 key={i}
                 className="mx-2 w-3 h-3 bg-gray-200 rounded-full relative cursor-pointer"
-                ref={(el) => (videoDivRef.current[i] = el)}
+                ref={(el) => setVideoDivRef(el, i)}
                 >
                 <span
                     className="absolute h-full w-full rounded-full"
-                    ref={(el) => (videoSpanRef.current[i] = el)}
+                    ref={(el) => setVideoSpanRef(el, i)}
                 />
                 </span>
             ))}

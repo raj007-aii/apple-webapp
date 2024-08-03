@@ -54,7 +54,7 @@ const HowItWorks = () => {
                     className="bg-transparent relative z-10"
                 />
                 </div>
-                <div className="hiw-video">
+                <div className="hiw-video md:rounded-[56px]">
                     <video className="pointer-events-none" playsInline preload="none" muted autoPlay ref={videoRef}>
                     <source src={frameVideo} type="video/mp4" />
                     </video>
